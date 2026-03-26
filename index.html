@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💸 Budget Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:         #0D0F14;
+      --surface:    #161A23;
+      --surface2:   #1E2330;
+      --border:     #2A3040;
+      --text:       #E2E8F0;
+      --muted:      #64748B;
+      --green:      #10B981;
+      --green-dim:  #0D2B22;
+      --red:        #F43F5E;
+      --red-dim:    #2D0F18;
+      --accent:     #6366F1;
+      --accent-dim: #1E1F3B;
+      --radius:     8px;
+      --radius-lg:  12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Space Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+    .logo span { color: var(--accent); }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+    }
+    .status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.offline { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+
+    .page { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 720px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+    .btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      padding: 9px 18px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 700;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #4F52D9; }
+    .btn-green   { background: var(--green);  color: #000; }
+    .btn-green:hover:not(:disabled)   { background: #0CA876; }
+    .btn-ghost   { background: transparent; border-color: var(--border); color: var(--muted); }
+    .btn-ghost:hover:not(:disabled)   { border-color: var(--accent); color: var(--text); }
+    .btn-danger  { background: transparent; border-color: var(--red-dim); color: var(--red); }
+    .btn-danger:hover:not(:disabled)  { background: var(--red-dim); }
+    .btn-sm { padding: 5px 12px; font-size: 11px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    input, select {
+      width: 100%;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    select { cursor: pointer; }
+
+    .type-toggle { display: flex; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+    .type-btn {
+      flex: 1;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      background: var(--surface2);
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .type-btn.active-income  { background: var(--green-dim); color: var(--green); }
+    .type-btn.active-expense { background: var(--red-dim);   color: var(--red); }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      right: -20px; top: -20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      opacity: 0.08;
+      filter: blur(20px);
+    }
+    .stat-card.income-card  { border-color: #0D2B22; }
+    .stat-card.income-card::after  { background: var(--green); }
+    .stat-card.expense-card { border-color: #2D0F18; }
+    .stat-card.expense-card::after { background: var(--red); }
+    .stat-card.balance-card { border-color: var(--accent-dim); }
+    .stat-card.balance-card::after { background: var(--accent); }
+
+    .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -1px; }
+    .stat-value.green  { color: var(--green); }
+    .stat-value.red    { color: var(--red); }
+    .stat-value.accent { color: var(--accent); }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    .section-head {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 16px;
+    }
+    .section-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+
+    .txn-list { display: flex; flex-direction: column; gap: 8px; }
+    .txn-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.2s ease;
+      transition: border-color 0.15s;
+    }
+    .txn-item:hover { border-color: var(--accent); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .txn-icon {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .txn-icon.income  { background: var(--green-dim); color: var(--green); }
+    .txn-icon.expense { background: var(--red-dim);   color: var(--red); }
+    .txn-body { flex: 1; min-width: 0; }
+    .txn-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn-meta  { font-size: 10px; color: var(--muted); margin-top: 2px; display: flex; gap: 10px; }
+    .txn-amount { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; white-space: nowrap; }
+    .txn-amount.income  { color: var(--green); }
+    .txn-amount.expense { color: var(--red); }
+
+    .cat-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px;
+      animation: slideIn 0.2s ease;
+    }
+    .cat-dot   { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .cat-name  { flex: 1; font-weight: 700; }
+    .cat-limit { font-size: 11px; color: var(--muted); }
+
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-bar select { width: auto; padding: 7px 10px; font-size: 11px; }
+
+    .pagination {
+      display: flex; align-items: center;
+      justify-content: center; gap: 10px; margin-top: 14px;
+    }
+    .page-info { font-size: 11px; color: var(--muted); }
+
+    .budget-bar {
+      display: flex; align-items: center;
+      gap: 10px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .budget-bar select { flex: 1; min-width: 200px; max-width: 320px; }
+
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px; width: 100%; max-width: 440px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      animation: popIn 0.2s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+    .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 12px; }
+    .empty-icon { font-size: 28px; margin-bottom: 8px; }
+    .loading { text-align: center; padding: 24px; color: var(--muted); font-size: 11px; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); padding: 12px 20px;
+      border-radius: var(--radius); font-size: 12px;
+      opacity: 0; transform: translateY(10px);
+      transition: all 0.25s; z-index: 999; pointer-events: none; max-width: 300px;
+    }
+    #toast.show         { opacity: 1; transform: translateY(0); }
+    #toast.show.success { border-color: var(--green); color: var(--green); }
+    #toast.show.error   { border-color: var(--red);   color: var(--red); }
+
+    .offline-banner {
+      background: var(--accent-dim); border: 1px solid #3333AA;
+      border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; display: none;
+    }
+    .offline-banner.visible { display: block; }
+    .offline-banner h3 { font-family: 'Syne', sans-serif; font-size: 14px; color: var(--accent); margin-bottom: 6px; }
+    .offline-banner p  { color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .offline-banner code {
+      background: rgba(99,102,241,0.15); border: 1px solid #4444CC;
+      border-radius: 4px; padding: 2px 8px; font-size: 12px; color: #A5B4FC;
+    }
+
+    #welcomeScreen { text-align: center; padding: 60px 20px; }
+    #welcomeScreen h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+    #welcomeScreen p  { color: var(--muted); margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">💸 Budget<span>Tracker</span></div>
+  <div class="status-badge">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">checking…</span>
+  </div>
+</header>
+
+<div class="page">
+
+  <div class="offline-banner" id="offlineBanner">
+    <h3>⚠️ API not running</h3>
+    <p>In your terminal, <code>cd budget_tracker</code> then run:<br/>
+    <code>uvicorn app.main:app --reload</code></p>
+  </div>
+
+  <div class="budget-bar">
+    <select id="budgetSelect" onchange="onBudgetChange()">
+      <option value="">— select a budget —</option>
+    </select>
+    <button class="btn btn-primary" onclick="openModal('createBudgetModal')">+ New Budget</button>
+    <button class="btn btn-danger btn-sm" id="deleteBudgetBtn" style="display:none" onclick="deleteBudget()">Delete</button>
+  </div>
+
+  <div id="welcomeScreen">
+    <div style="font-size:48px;margin-bottom:16px">📊</div>
+    <h2>Track your money</h2>
+    <p>Create a budget, add categories, log income & expenses.</p>
+    <button class="btn btn-primary" onclick="openModal('createBudgetModal')">Create your first budget →</button>
+  </div>
+
+  <div id="mainContent" style="display:none">
+    <div class="grid-3" style="margin-bottom:24px">
+      <div class="stat-card income-card">
+        <div class="stat-label">Income</div>
+        <div class="stat-value green" id="sumIncome">$0.00</div>
+        <div class="stat-sub">money in</div>
+      </div>
+      <div class="stat-card expense-card">
+        <div class="stat-label">Expenses</div>
+        <div class="stat-value red" id="sumExpense">$0.00</div>
+        <div class="stat-sub">money out</div>
+      </div>
+      <div class="stat-card balance-card">
+        <div class="stat-label">Balance</div>
+        <div class="stat-value accent" id="sumBalance">$0.00</div>
+        <div class="stat-sub" id="txnCount">0 transactions</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-head">
+          <div class="section-title">Transactions</div>
+          <button class="btn btn-green btn-sm" onclick="openModal('addTxnModal')">+ Add</button>
+        </div>
+        <div class="filter-bar">
+          <select id="filterType" onchange="loadTransactions(1)">
+            <option value="">All types</option>
+            <option value="income">↑ Income</option>
+            <option value="expense">↓ Expense</option>
+          </select>
+          <select id="filterCat" onchange="loadTransactions(1)">
+            <option value="">All categories</option>
+          </select>
+        </div>
+        <div id="txnList"><div class="loading">loading…</div></div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <div class="section-title">Categories</div>
+          <button class="btn btn-ghost btn-sm" onclick="openModal('addCatModal')">+ Add</button>
+        </div>
+        <div id="catList"><div class="loading">loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Create Budget -->
+<div class="modal-overlay" id="createBudgetModal">
+  <div class="modal">
+    <div class="modal-title">New Budget</div>
+    <div class="form-group">
+      <label>Name *</label>
+      <input id="bName" placeholder="e.g. April Budget" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <input id="bDesc" placeholder="optional" />
+    </div>
+    <div class="form-group">
+      <label>Spending Limit ($) *</label>
+      <input id="bLimit" type="number" placeholder="5000" min="1" step="0.01" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('createBudgetModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createBudget()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Transaction -->
+<div class="modal-overlay" id="addTxnModal">
+  <div class="modal">
+    <div class="modal-title">Add Transaction</div>
+    <div class="form-group">
+      <label>Type *</label>
+      <div class="type-toggle">
+        <button class="type-btn active-income" id="typeIncomeBtn"  onclick="setTxnType('income')">↑ Income</button>
+        <button class="type-btn"               id="typeExpenseBtn" onclick="setTxnType('expense')">↓ Expense</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Title *</label>
+      <input id="tTitle" placeholder="e.g. Salary, Groceries" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Amount ($) *</label>
+        <input id="tAmount" type="number" placeholder="0.00" min="0.01" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="tCat"><option value="">None</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Note</label>
+      <input id="tNote" placeholder="optional" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addTxnModal')">Cancel</button>
+      <button class="btn btn-green" onclick="createTransaction()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Category -->
+<div class="modal-overlay" id="addCatModal">
+  <div class="modal">
+    <div class="modal-title">New Category</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Name *</label>
+        <input id="cName" placeholder="e.g. Food, Rent" />
+      </div>
+      <div class="form-group">
+        <label>Colour</label>
+        <input id="cColor" type="color" value="#6366F1" style="height:42px;padding:3px 6px;cursor:pointer;" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Spending Limit (optional)</label>
+      <input id="cLimit" type="number" placeholder="leave blank for no limit" min="1" step="0.01" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addCatModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createCategory()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000/api/v1';
+
+let activeBudgetId = null;
+let txnType        = 'income';
+let currentPage    = 1;
+let categories     = [];
+
+async function callAPI(method, path, body = null) {
+  const res = await fetch(API + path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : null,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+const fmt     = n => '$' + parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  setTimeout(() => el.className = '', 2500);
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+);
+
+async function checkStatus() {
+  try {
+    await fetch('http://localhost:8000/health');
+    document.getElementById('statusDot').className = 'status-dot online';
+    document.getElementById('statusText').textContent = 'API online';
+    document.getElementById('offlineBanner').classList.remove('visible');
+  } catch {
+    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusText').textContent = 'API offline';
+    document.getElementById('offlineBanner').classList.add('visible');
+  }
+}
+
+async function loadBudgets() {
+  try {
+    const budgets = await callAPI('GET', '/budgets');
+    const sel = document.getElementById('budgetSelect');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— select a budget —</option>';
+    budgets.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = `${b.name}  (limit: ${fmt(b.total_limit)})`;
+      sel.appendChild(opt);
+    });
+    if (prev) sel.value = prev;
+  } catch (e) { console.error(e); }
+}
+
+function onBudgetChange() {
+  const sel = document.getElementById('budgetSelect');
+  activeBudgetId = sel.value || null;
+  const show = !!activeBudgetId;
+  document.getElementById('mainContent').style.display     = show ? 'block'        : 'none';
+  document.getElementById('welcomeScreen').style.display   = show ? 'none'         : 'block';
+  document.getElementById('deleteBudgetBtn').style.display = show ? 'inline-block' : 'none';
+  if (show) { loadSummary(); loadCategories(); loadTransactions(1); }
+}
+
+async function createBudget() {
+  const name  = document.getElementById('bName').value.trim();
+  const desc  = document.getElementById('bDesc').value.trim();
+  const limit = document.getElementById('bLimit').value;
+  if (!name || !limit) return showToast('Name and limit required', 'error');
+  try {
+    const b = await callAPI('POST', '/budgets', {
+      name,
+      description: desc || undefined,
+      total_limit: parseFloat(limit),
+    });
+    showToast(`"${b.name}" created ✓`);
+    closeModal('createBudgetModal');
+    ['bName','bDesc','bLimit'].forEach(id => document.getElementById(id).value = '');
+    await loadBudgets();
+    document.getElementById('budgetSelect').value = b.id;
+    onBudgetChange();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteBudget() {
+  if (!activeBudgetId || !confirm('Delete this budget and all its data?')) return;
+  try {
+    await callAPI('DELETE', `/budgets/${activeBudgetId}`);
+    showToast('Budget deleted');
+    activeBudgetId = null;
+    document.getElementById('budgetSelect').value = '';
+    onBudgetChange();
+    await loadBudgets();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadSummary() {
+  try {
+    const s = await callAPI('GET', `/budgets/${activeBudgetId}/summary`);
+    document.getElementById('sumIncome').textContent  = fmt(s.total_income);
+    document.getElementById('sumExpense').textContent = fmt(s.total_expenses);
+    document.getElementById('txnCount').textContent   = `${s.transaction_count} transactions`;
+    const bal = parseFloat(s.balance);
+    const el  = document.getElementById('sumBalance');
+    el.textContent = fmt(s.balance);
+    el.className   = 'stat-value ' + (bal >= 0 ? 'green' : 'red');
+  } catch (e) { console.error(e); }
+}
+
+async function loadCategories() {
+  try {
+    categories = await callAPI('GET', `/budgets/${activeBudgetId}/categories`);
+    renderCategoryList();
+    syncCategoryDropdowns();
+  } catch (e) {
+    document.getElementById('catList').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+  }
+}
+
+function renderCategoryList() {
+  const el = document.getElementById('catList');
+  if (!categories.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏷️</div>No categories yet</div>';
+    return;
+  }
+  el.innerHTML = categories.map(c => `
+    <div class="cat-item">
+      <div class="cat-dot" style="background:${c.color}"></div>
+      <div class="cat-name">${c.name}</div>
+      <div class="cat-limit">${c.spending_limit ? 'cap: ' + fmt(c.spending_limit) : 'no limit'}</div>
+      <button class="btn btn-danger btn-sm" onclick="deleteCategory(${c.id})">✕</button>
+    </div>`).join('');
+}
+
+function syncCategoryDropdowns() {
+  const opts = '<option value="">None</option>' +
+    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('tCat').innerHTML = opts;
+  const fc = document.getElementById('filterCat');
+  const prev = fc.value;
+  fc.innerHTML = '<option value="">All categories</option>' +
+    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  fc.value = prev;
+}
+
+async function createCategory() {
+  const name  = document.getElementById('cName').value.trim();
+  const color = document.getElementById('cColor').value;
+  const limit = document.getElementById('cLimit').value;
+  if (!name) return showToast('Name required', 'error');
+  try {
+    await callAPI('POST', `/budgets/${activeBudgetId}/categories`, {
+      name, color,
+      spending_limit: limit ? parseFloat(limit) : undefined,
+    });
+    showToast(`"${name}" created ✓`);
+    closeModal('addCatModal');
+    document.getElementById('cName').value  = '';
+    document.getElementById('cLimit').value = '';
+    await loadCategories();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteCategory(id) {
+  if (!confirm('Delete this category?')) return;
+  try {
+    await callAPI('DELETE', `/budgets/${activeBudgetId}/categories/${id}`);
+    showToast('Category deleted');
+    await loadCategories();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadTransactions(page = 1) {
+  currentPage = page;
+  const type  = document.getElementById('filterType').value;
+  const catId = document.getElementById('filterCat').value;
+  let qs = `?page=${page}&page_size=8`;
+  if (type)  qs += `&type=${type}`;
+  if (catId) qs += `&category_id=${catId}`;
+  document.getElementById('txnList').innerHTML = '<div class="loading">loading…</div>';
+  try {
+    const data = await callAPI('GET', `/budgets/${activeBudgetId}/transactions${qs}`);
+    renderTransactions(data);
+  } catch (e) {
+    document.getElementById('txnList').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+  }
+}
+
+function renderTransactions(data) {
+  const el = document.getElementById('txnList');
+  if (!data.items.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">💳</div>No transactions yet</div>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  // O(1) category lookup instead of a find() on every transaction
+  const catMap = Object.fromEntries(categories.map(c => [c.id, c]));
+
+  el.innerHTML = '<div class="txn-list">' + data.items.map(t => {
+    const cat    = t.category_id ? catMap[t.category_id] : null;
+    const catTag = cat ? `<span style="color:${cat.color}">● ${cat.name}</span>` : '';
+    return `
+      <div class="txn-item">
+        <div class="txn-icon ${t.type}">${t.type === 'income' ? '↑' : '↓'}</div>
+        <div class="txn-body">
+          <div class="txn-title">${t.title}</div>
+          <div class="txn-meta">
+            <span>${fmtDate(t.date)}</span>
+            ${catTag}
+            ${t.note ? `<span style="font-style:italic">${t.note}</span>` : ''}
+          </div>
+        </div>
+        <div class="txn-amount ${t.type}">${t.type === 'income' ? '+' : '-'}${fmt(t.amount)}</div>
+        <button class="btn btn-danger btn-sm" onclick="deleteTransaction(${t.id})">✕</button>
+      </div>`;
+  }).join('') + '</div>';
+
+  const pag = document.getElementById('pagination');
+  if (data.pages <= 1) { pag.innerHTML = ''; return; }
+  pag.innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="loadTransactions(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Prev</button>
+    <span class="page-info">Page ${currentPage} of ${data.pages}</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadTransactions(${currentPage+1})" ${currentPage===data.pages?'disabled':''}>Next ›</button>`;
+}
+
+function setTxnType(type) {
+  txnType = type;
+  document.getElementById('typeIncomeBtn').className  = 'type-btn' + (type === 'income'  ? ' active-income'  : '');
+  document.getElementById('typeExpenseBtn').className = 'type-btn' + (type === 'expense' ? ' active-expense' : '');
+}
+
+async function createTransaction() {
+  const title  = document.getElementById('tTitle').value.trim();
+  const amount = document.getElementById('tAmount').value;
+  const catId  = document.getElementById('tCat').value;
+  const note   = document.getElementById('tNote').value.trim();
+  if (!title || !amount) return showToast('Title and amount required', 'error');
+  try {
+    await callAPI('POST', `/budgets/${activeBudgetId}/transactions`, {
+      title,
+      amount: parseFloat(amount),
+      type: txnType,
+      category_id: catId ? parseInt(catId) : undefined,
+      note: note || undefined,
+    });
+    showToast('Transaction saved ✓');
+    closeModal('addTxnModal');
+    ['tTitle','tAmount','tNote'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('tCat').value = '';
+    await loadSummary();
+    await loadTransactions(1);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteTransaction(id) {
+  try {
+    await callAPI('DELETE', `/budgets/${activeBudgetId}/transactions/${id}`);
+    showToast('Transaction deleted');
+    await loadSummary();
+    await loadTransactions(currentPage);
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+checkStatus();
+setInterval(checkStatus, 10_000);
+loadBudgets();
+</script>
+</body>
+</html>
