@@ -1,6 +1,6 @@
 # Budget Tracker API
 
-A REST API for managing personal budgets, categories, and transactions. Built with FastAPI, SQLAlchemy, and SQLite — includes a full test suite and an interactive Swagger UI out of the box.
+A REST API for managing personal budgets, categories, and transactions. Built with FastAPI, SQLAlchemy, and SQLite — with an interactive Swagger UI out of the box.
 
 ---
 
@@ -13,7 +13,6 @@ A REST API for managing personal budgets, categories, and transactions. Built wi
 | Database   | SQLite              |
 | Validation | Pydantic v2         |
 | Server     | Uvicorn             |
-| Tests      | Pytest + HTTPX      |
 
 ---
 
@@ -36,8 +35,6 @@ Budget-Tracker-Api/
 │       ├── budget_service.py       # Budget business logic
 │       ├── category_service.py     # Category business logic
 │       └── transaction_service.py  # Transaction business logic
-├── tests/
-│   └── test_api.py                 # 20 tests
 ├── index.html                      # Frontend UI
 └── requirements.txt
 ```
@@ -66,12 +63,6 @@ Server runs at `http://localhost:8000`
 |------------|-----------------------------|
 | Swagger UI | http://localhost:8000/docs  |
 | ReDoc      | http://localhost:8000/redoc |
-
-**4. Run tests**
-
-```bash
-python -m pytest tests/ -v
-```
 
 ---
 
@@ -181,53 +172,4 @@ Transaction
   ├── note, date
   ├── budget_id (FK → Budget)
   └── category_id (FK → Category, optional)
-```
-
----
-
-## Test Coverage
-
-```
-test_root                              PASSED
-test_health                            PASSED
-test_create_budget                     PASSED
-test_list_budgets                      PASSED
-test_get_budget_with_summary           PASSED
-test_update_budget                     PASSED
-test_delete_budget                     PASSED
-test_budget_not_found                  PASSED
-test_create_category                   PASSED
-test_list_categories                   PASSED
-test_category_spending                 PASSED
-test_delete_category                   PASSED
-test_create_income_transaction         PASSED
-test_create_expense_transaction        PASSED
-test_list_transactions_paginated       PASSED
-test_filter_by_type                    PASSED
-test_update_transaction                PASSED
-test_delete_transaction                PASSED
-test_invalid_transaction_amount        PASSED
-test_transaction_wrong_budget_category PASSED
-
-20 passed in 4.47s
-```
-
----
-
-## Switch to PostgreSQL
-
-Change one line in `app/database.py`:
-
-```python
-# SQLite (default)
-DATABASE_URL = "sqlite:///./budget_tracker.db"
-
-# PostgreSQL
-DATABASE_URL = "postgresql://user:password@localhost:5432/budget_db"
-```
-
-Then install the driver:
-
-```bash
-pip install psycopg2-binary
 ```
